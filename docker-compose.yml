@@ -1,6 +1,6 @@
 services:
   planner:
-    build: .
+    image: ghcr.io/olidunham/christmas-dinner-planner:latest
     container_name: christmas-planner
     restart: unless-stopped
     ports:

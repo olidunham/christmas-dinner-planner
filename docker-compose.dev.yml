@@ -1,0 +1,5 @@
+# Local development override: build the image from this folder instead of pulling it from GHCR.
+# Use:  docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  planner:
+    build: .
