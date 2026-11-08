@@ -1,17 +1,31 @@
-name: Publish image
+name: Test and publish image
 
-# Runs every time you push to the main branch.
+# Tests run on every push to main and on every pull request.
+# The image is only published when code lands on main (i.e. a PR is merged).
 on:
   push:
     branches: [main]
+  pull_request:
 
-# What the built-in token is allowed to do: read the code, write packages (GHCR).
 permissions:
   contents: read
   packages: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Smoke test
+        run: node test/smoke.js
+
   publish:
+    # A failing test blocks publishing, so a broken build never reaches Watchtower.
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Get the code
@@ -24,8 +38,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Works out the image name (ghcr.io/<owner>/<repo>, lowercased) and tags:
-      # "latest" (moves with every push) and "sha-<commit>" (never changes, good for rollback).
+      # Image name = ghcr.io/<owner>/<repo> (lowercased). Tags: "latest" (moves each push)
+      # and "sha-<commit>" (fixed, used for rollback).
       - name: Work out image name and tags
         id: meta
         uses: docker/metadata-action@v5

@@ -1,0 +1,16 @@
+# ONE Watchtower per LXC, shared by every app. Lives in its own folder on the LXC,
+# e.g. /opt/watchtower. Apps opt in with the label:
+#   com.centurylinklabs.watchtower.enable: "true"
+services:
+  watchtower:
+    # Maintained fork of the archived containrrr/watchtower. Docker Hub: nickfedor/watchtower
+    image: nickfedor/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      TZ: Europe/London
+      WATCHTOWER_POLL_INTERVAL: "300"   # seconds between checks
+      WATCHTOWER_LABEL_ENABLE: "true"   # only update labelled containers
+      WATCHTOWER_CLEANUP: "true"        # delete old images after updating

@@ -10,19 +10,6 @@ services:
     environment:
       TZ: Europe/London
     labels:
-      # Opt this container in to automatic updates (Watchtower only touches labelled containers).
+      # Opt this container in to automatic updates. The shared Watchtower (see infra/watchtower)
+      # only touches containers with this label.
       com.centurylinklabs.watchtower.enable: "true"
-
-  watchtower:
-    # Maintained fork of the archived containrrr/watchtower. Docker Hub: nickfedor/watchtower
-    image: nickfedor/watchtower
-    container_name: watchtower
-    restart: unless-stopped
-    volumes:
-      # Lets Watchtower talk to Docker so it can pull images and recreate containers.
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      TZ: Europe/London
-      WATCHTOWER_POLL_INTERVAL: "300"   # check for a new image every 5 minutes (seconds)
-      WATCHTOWER_LABEL_ENABLE: "true"   # only update containers labelled as above
-      WATCHTOWER_CLEANUP: "true"        # delete the old image after updating

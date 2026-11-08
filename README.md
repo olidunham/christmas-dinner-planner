@@ -37,4 +37,7 @@ PORT=3000 DB_PATH=./data/planner.db node server.js
 - Wipe and reseed in place: `docker compose run --rm planner node server.js --reseed`.
 
 ## Update
-Copy or `git pull` the new files, then `docker compose up -d --build`. The data folder is kept.
+Merge to `main`; Watchtower on the LXC pulls the new image automatically (see docs/DEPLOY.md).
+
+## Deploying and auto-updates
+See [docs/DEPLOY.md](docs/DEPLOY.md). Tests: `node test/smoke.js`.
