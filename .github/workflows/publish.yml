@@ -1,0 +1,45 @@
+name: Publish image
+
+# Runs every time you push to the main branch.
+on:
+  push:
+    branches: [main]
+
+# What the built-in token is allowed to do: read the code, write packages (GHCR).
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Works out the image name (ghcr.io/<owner>/<repo>, lowercased) and tags:
+      # "latest" (moves with every push) and "sha-<commit>" (never changes, good for rollback).
+      - name: Work out image name and tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

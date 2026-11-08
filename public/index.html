@@ -1,0 +1,448 @@
+<title>Christmas Dinner Planner</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a planner ledger — header with countdown, three tabs (Dishes, Ingredients, Schedule), each an inline-editable sheet. */
+:root {
+  --bg: #f6f8f6;
+  --surface: #ffffff;
+  --ink: #17261f;
+  --muted: #5d6e66;
+  --line: #dbe3de;
+  --pine: #1f4d3a;
+  --pine-soft: #e3eee8;
+  --berry: #b3263e;
+  --berry-soft: #f8e4e8;
+  --gold: #a87914;
+  --gold-soft: #f6edd6;
+  --focus: #2f7a5b;
+  --font-display: "Young Serif", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1613; --surface: #16201b; --ink: #e7efea; --muted: #9db0a6; --line: #2a3832;
+    --pine: #8fd0b0; --pine-soft: #1d3329; --berry: #f07a8d; --berry-soft: #3a1c23;
+    --gold: #e2b955; --gold-soft: #33290f; --focus: #8fd0b0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1613; --surface: #16201b; --ink: #e7efea; --muted: #9db0a6; --line: #2a3832;
+  --pine: #8fd0b0; --pine-soft: #1d3329; --berry: #f07a8d; --berry-soft: #3a1c23;
+  --gold: #e2b955; --gold-soft: #33290f; --focus: #8fd0b0; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--berry); }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 5vw, 40px); line-height: 1.1; margin: 4px 0 0; text-wrap: balance; color: var(--ink); }
+.facts { display: flex; flex-wrap: wrap; gap: 10px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; display: grid; gap: 2px; min-width: 120px; }
+.fact span { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fact b, .fact input { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--pine); }
+.fact input { border: 0; background: transparent; padding: 0; font-family: inherit; width: 7.5em; }
+nav { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+nav button {
+  appearance: none; border: 0; background: transparent; font: inherit; font-weight: 600; color: var(--muted);
+  padding: 10px 16px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap;
+}
+nav button[aria-selected="true"] { color: var(--pine); border-bottom-color: var(--berry); }
+nav button .n { font-weight: 500; font-size: 12px; margin-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.panel { display: grid; gap: 14px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-head p { margin: 0; color: var(--muted); max-width: 62ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { appearance: none; font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 5px 12px; border-radius: 999px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--pine); border-color: var(--pine); color: var(--surface); }
+.btn { appearance: none; font: inherit; font-weight: 600; border: 0; background: var(--pine); color: var(--surface); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+.btn:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.sheet { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; min-width: 760px; }
+th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 10px 8px; border-bottom: 1px solid var(--line); background: var(--surface); white-space: nowrap; }
+td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+tr.day-break td { background: var(--pine-soft); color: var(--pine); font-weight: 600; font-size: 13px; padding: 7px 10px; }
+td input[type="text"], td input[type="url"], td input[type="time"], td select {
+  width: 100%; font: inherit; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 7px;
+}
+td input:hover, td select:hover { border-color: var(--line); }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+td input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--pine); cursor: pointer; }
+td.c { text-align: center; }
+tr.done td input[type="text"] { text-decoration: line-through; color: var(--muted); }
+.link-cell { display: flex; align-items: center; gap: 4px; }
+.link-cell a { flex: none; font-size: 13px; font-weight: 600; color: var(--pine); text-decoration: none; padding: 4px 8px; border-radius: 6px; background: var(--pine-soft); }
+.del { appearance: none; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px 8px; border-radius: 6px; }
+.del:hover { color: var(--berry); background: var(--berry-soft); }
+.del.confirm { color: var(--surface); background: var(--berry); font-size: 12px; font-weight: 600; }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+select.when-early { color: var(--pine); font-weight: 600; }
+select.when-late { color: var(--gold); font-weight: 600; }
+select.where-oven { color: var(--berry); font-weight: 600; }
+.empty { padding: 28px 20px; text-align: center; color: var(--muted); display: grid; gap: 4px; justify-items: center; }
+.empty strong { color: var(--ink); font-family: var(--font-display); font-weight: 400; font-size: 18px; }
+.meter { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meter .bar { width: 140px; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; background: var(--pine); }
+.notice { border-radius: 10px; padding: 10px 14px; font-size: 14px; background: var(--gold-soft); color: var(--ink); border: 1px solid var(--line); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend b { color: var(--ink); font-weight: 600; }
+td.tg { display: none; }
+.tgl { appearance: none; border: 0; background: var(--pine-soft); color: var(--pine); cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
+td textarea.grow { width: 100%; font: inherit; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 7px; resize: none; overflow: hidden; white-space: pre; height: 2.4em; display: block; }
+td textarea.grow:hover { border-color: var(--line); }
+tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
+@media (max-width: 640px) {
+  .sheet { overflow: visible; background: none; border: 0; border-radius: 0; }
+  table, tbody { display: block; min-width: 0; width: 100%; }
+  thead { display: none; }
+  tbody tr { display: flex; flex-wrap: wrap; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; padding: 4px; }
+  tbody td { border: 0; padding: 2px 4px; }
+  tbody td[colspan] { flex: 1 1 100%; }
+  tr.day-break { display: block; background: var(--pine-soft); border: 0; padding: 0; margin: 14px 0 8px; }
+  td.p { flex: 1 1 0; min-width: 0; }
+  td.p.s { flex: 0 0 38%; }
+  td.p.c, td.dn { flex: 0 0 auto; }
+  td.tg { display: block; flex: 0 0 auto; }
+  td.x { display: none; flex: 1 1 100%; }
+  tr.open td.x { display: block; }
+  td.x::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 4px 7px 0; }
+  tr.sch td.tm { order: 1; flex: 1 1 0; }
+  tr.sch td.dn { order: 2; }
+  tr.sch td.tg { order: 3; }
+  tr.sch td.tk { order: 4; flex: 1 1 100%; }
+  tr.sch td.x { order: 5; }
+  td textarea.grow { white-space: pre-wrap; field-sizing: content; height: auto; min-height: 2.4em; font-size: 16px; }
+  td input[type="text"], td input[type="url"], td input[type="time"], td select { font-size: 16px; min-height: 40px; }
+  td input[type="checkbox"] { width: 26px; height: 26px; }
+  .del { min-width: 40px; min-height: 40px; }
+  .meter .bar { width: 90px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">25 December 2026 · Dinner for 6</div>
+      <h1>Christmas Dinner Planner</h1>
+    </div>
+    <div class="facts">
+      <div class="fact"><span>Days to go</span><b id="countdown">–</b></div>
+      <div class="fact"><span>Dishes</span><b id="dishCount">0</b></div>
+      <div class="fact"><label for="serveTime"><span>Dinner served</span></label><input id="serveTime" type="time" value="14:00"></div>
+    </div>
+  </header>
+
+  <div id="notice" class="notice" hidden></div>
+
+  <nav role="tablist">
+    <button role="tab" data-tab="dishes" aria-selected="true">Dishes<span class="n" id="n-dishes"></span></button>
+    <button role="tab" data-tab="ingredients" aria-selected="false">Ingredients<span class="n" id="n-ingredients"></span></button>
+    <button role="tab" data-tab="schedule" aria-selected="false">Schedule<span class="n" id="n-schedule"></span></button>
+  </nav>
+
+  <section class="panel" id="panel-dishes">
+    <div class="panel-head">
+      <p>Add each dish on the menu with a link to its recipe. Changes save automatically.</p>
+      <button class="btn" data-add="dishes">+ Add dish</button>
+    </div>
+    <div class="sheet"><table>
+      <thead><tr><th style="width:24%">Dish</th><th style="width:13%">Course</th><th style="width:30%">Recipe link</th><th style="width:14%">Make ahead?</th><th>Notes</th><th style="width:44px"></th></tr></thead>
+      <tbody id="body-dishes"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" id="panel-ingredients" hidden>
+    <div class="panel-head">
+      <div class="chips" id="ingFilters">
+        <button class="chip" data-f="all" aria-pressed="true">All</button>
+        <button class="chip" data-f="todo" aria-pressed="false">Still to buy</button>
+        <button class="chip" data-f="early" aria-pressed="false">Buy early</button>
+        <button class="chip" data-f="late" aria-pressed="false">Buy close to the day</button>
+      </div>
+      <div class="meter"><span id="boughtText">0 of 0 bought</span><span class="bar"><i id="boughtBar" style="width:0%"></i></span></div>
+      <button class="btn" data-add="ingredients">+ Add ingredient</button>
+    </div>
+    <div class="legend"><span><b>Buy early</b> keeps well: tins, frozen, spices, drinks, dry goods.</span><span><b>Buy close to the day</b> is fresh: meat, veg, cream, herbs.</span></div>
+    <div class="sheet"><table>
+      <thead><tr><th style="width:24%">Ingredient</th><th style="width:18%">For dish</th><th style="width:12%">Quantity (for 6)</th><th style="width:18%">When to buy</th><th style="width:14%">Shop</th><th style="width:70px" class="c">Bought</th><th style="width:44px"></th></tr></thead>
+      <tbody id="body-ingredients"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" id="panel-schedule" hidden>
+    <div class="panel-head">
+      <p>Work back from the serving time. Rows sort by day, then time.</p>
+      <button class="btn" data-add="schedule">+ Add step</button>
+    </div>
+    <div class="sheet"><table>
+      <thead><tr><th style="width:15%">Day</th><th style="width:11%">Time</th><th style="width:34%">Task</th><th style="width:18%">Dish</th><th style="width:14%">Uses</th><th style="width:60px" class="c">Done</th><th style="width:44px"></th></tr></thead>
+      <tbody id="body-schedule"></tbody>
+    </table></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const COURSES = ["", "Starter", "Main", "Side", "Sauce & gravy", "Dessert", "Drinks", "Nibbles"];
+  const AHEAD = ["", "On the day", "Day before", "2–3 days before", "Freeze ahead"];
+  const WHEN = [["", ""], ["early", "Buy early"], ["late", "Buy close to the day"]];
+  const DAYS = ["Before 23 Dec", "23 Dec", "Christmas Eve", "Christmas Day"];
+  const WHERE = ["", "Main oven", "Top oven", "Combi microwave", "Hob", "Fridge", "Freezer", "Shopping", "Other"];
+
+  const state = { dishes: [], ingredients: [], schedule: [], tab: "dishes", ingFilter: "all", canWrite: true, serveTime: "" };
+  let armedDelete = null;
+
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // Countdown
+  (function () {
+    const now = new Date();
+    const xmas = new Date(now.getFullYear(), 11, 25);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const d = Math.round((xmas - today) / 86400000);
+    $("#countdown").textContent = d > 0 ? d : d === 0 ? "Today!" : "–";
+  })();
+
+  function notice(msg) { const n = $("#notice"); n.textContent = msg; n.hidden = !msg; }
+
+  // Tabs
+  document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+  function setTab(t) {
+    state.tab = t;
+    document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+    ["dishes", "ingredients", "schedule"].forEach(k => $("#panel-" + k).hidden = k !== t);
+    try { localStorage.setItem("xmas-tab", t); } catch (e) {}
+  }
+  try { const t = localStorage.getItem("xmas-tab"); if (t) setTab(t); } catch (e) {}
+
+  document.querySelectorAll("#ingFilters .chip").forEach(c => c.addEventListener("click", () => {
+    state.ingFilter = c.dataset.f;
+    document.querySelectorAll("#ingFilters .chip").forEach(x => x.setAttribute("aria-pressed", x === c));
+    renderIngredients();
+  }));
+
+  // Helpers to build cells
+  const opts = (list, val) => list.map(o => {
+    const [v, l] = Array.isArray(o) ? o : [o, o];
+    return `<option value="${esc(v)}"${v === val ? " selected" : ""}>${esc(l || "—")}</option>`;
+  }).join("");
+  const dishOpts = val => opts([["", ""], ...state.dishes.map(d => [d.id, d.name || "(unnamed dish)"])], val);
+  const id = (col, doc, f) => `${col}__${doc}__${f}`;
+  const txt = (col, d, f, ph = "") => `<input type="text" id="${id(col, d.id, f)}" data-col="${col}" data-doc="${d.id}" data-f="${f}" value="${esc(d[f])}" placeholder="${esc(ph)}">`;
+  const sel = (col, d, f, html, cls = "") => `<select id="${id(col, d.id, f)}" class="${cls}" data-col="${col}" data-doc="${d.id}" data-f="${f}">${html}</select>`;
+  const chk = (col, d, f, label) => `<input type="checkbox" id="${id(col, d.id, f)}" aria-label="${esc(label)}" data-col="${col}" data-doc="${d.id}" data-f="${f}"${d[f] ? " checked" : ""}>`;
+  const del = (col, d) => `<button class="del${armedDelete === col + d.id ? " confirm" : ""}" data-del="${col}" data-doc="${d.id}" aria-label="Delete row">${armedDelete === col + d.id ? "Delete?" : "×"}</button>`;
+  const empty = (title, body) => `<tr><td colspan="9"><div class="empty"><strong>${title}</strong><span>${body}</span></div></td></tr>`;
+
+  // Keep the focused field and anything typed in it across re-renders
+  function preserveFocus(fn) {
+    const a = document.activeElement;
+    const keep = a && a.id && a.id.includes("__") ? { id: a.id, v: a.value, s: a.selectionStart, e: a.selectionEnd, type: a.type } : null;
+    fn();
+    if (keep) {
+      const el = document.getElementById(keep.id);
+      if (el) {
+        if (keep.type !== "checkbox") el.value = keep.v;
+        el.focus();
+        try { if (keep.s != null) el.setSelectionRange(keep.s, keep.e); } catch (e) {}
+      }
+    }
+  }
+
+  const open = new Set();
+  const rowCls = (col, d, extra = "") => [extra, open.has(col + d.id) ? "open" : ""].filter(Boolean).join(" ");
+  const tog = (col, d) => `<td class="tg"><button class="tgl" data-tog="${col}${d.id}" aria-expanded="${open.has(col + d.id)}">${open.has(col + d.id) ? "Less ▴" : "More ▾"}</button></td>`;
+  const area = (col, d, f, ph = "") => `<textarea rows="1" class="grow" id="${id(col, d.id, f)}" data-col="${col}" data-doc="${d.id}" data-f="${f}" placeholder="${esc(ph)}">${esc(d[f])}</textarea>`;
+
+  function renderDishes() {
+    const b = $("#body-dishes");
+    if (!state.dishes.length) { b.innerHTML = empty("No dishes yet", "Press “Add dish” to start your menu: the turkey, roast potatoes, pigs in blankets…"); return; }
+    b.innerHTML = state.dishes.map(d => {
+      const url = /^https?:\/\//i.test(d.recipe || "") ? d.recipe : "";
+      return `<tr class="${rowCls("dishes", d)}">
+        <td class="p">${txt("dishes", d, "name", "e.g. Roast turkey")}</td>
+        <td class="p s">${sel("dishes", d, "course", opts(COURSES, d.course || ""))}</td>
+        <td class="x" data-label="Recipe link"><div class="link-cell"><input type="url" id="${id("dishes", d.id, "recipe")}" data-col="dishes" data-doc="${d.id}" data-f="recipe" value="${esc(d.recipe)}" placeholder="Paste recipe URL">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Open</a>` : ""}</div></td>
+        <td class="x" data-label="Make ahead?">${sel("dishes", d, "ahead", opts(AHEAD, d.ahead || ""))}</td>
+        <td class="x" data-label="Notes">${txt("dishes", d, "notes", "")}</td>
+        ${tog("dishes", d)}
+        <td class="x" data-label="Delete">${del("dishes", d)}</td></tr>`;
+    }).join("");
+  }
+
+  function renderIngredients() {
+    const all = state.ingredients;
+    const bought = all.filter(i => i.bought).length;
+    $("#boughtText").textContent = `${bought} of ${all.length} bought`;
+    $("#boughtBar").style.width = all.length ? (bought / all.length * 100) + "%" : "0%";
+    const f = state.ingFilter;
+    const rows = all.filter(i => f === "all" || (f === "todo" && !i.bought) || i.when === f);
+    const b = $("#body-ingredients");
+    if (!all.length) { b.innerHTML = empty("No ingredients yet", "Add the ingredients for each dish with “Add ingredient”."); return; }
+    if (!rows.length) { b.innerHTML = empty("Nothing here", f === "todo" ? "Everything's bought." : "No ingredients match this filter."); return; }
+    b.innerHTML = rows.map(d => `<tr class="${rowCls("ingredients", d, d.bought ? "done" : "")}">
+      <td class="p">${txt("ingredients", d, "item", "e.g. Maris Piper potatoes")}</td>
+      <td class="x" data-label="For dish">${sel("ingredients", d, "dish", dishOpts(d.dish || ""))}</td>
+      <td class="p s">${txt("ingredients", d, "qty", "e.g. 2.5 kg")}</td>
+      <td class="x" data-label="When to buy">${sel("ingredients", d, "when", opts(WHEN, d.when || ""), d.when === "early" ? "when-early" : d.when === "late" ? "when-late" : "")}</td>
+      <td class="x" data-label="Shop">${txt("ingredients", d, "shop", "")}</td>
+      <td class="c p">${chk("ingredients", d, "bought", "Bought")}</td>
+      ${tog("ingredients", d)}
+      <td class="x" data-label="Delete">${del("ingredients", d)}</td></tr>`).join("");
+  }
+
+  function renderSchedule() {
+    const b = $("#body-schedule");
+    const rows = [...state.schedule].sort((a, c) =>
+      (DAYS.indexOf(a.day) - DAYS.indexOf(c.day)) || String(a.time || "99").localeCompare(String(c.time || "99")) || (a.order - c.order));
+    if (!rows.length) { b.innerHTML = empty("No steps yet", "Add cooking steps here, working back from the serving time."); return; }
+    let last = null, html = "";
+    for (const d of rows) {
+      if (d.day !== last) { html += `<tr class="day-break"><td colspan="7">${esc(d.day || "No day set")}</td></tr>`; last = d.day; }
+      html += `<tr class="${rowCls("schedule", d, "sch" + (d.done ? " done" : ""))}">
+        <td class="x" data-label="Day">${sel("schedule", d, "day", opts(DAYS, d.day))}</td>
+        <td class="p tm"><input type="time" id="${id("schedule", d.id, "time")}" data-col="schedule" data-doc="${d.id}" data-f="time" value="${esc(d.time)}"></td>
+        <td class="p tk">${area("schedule", d, "task", "e.g. Turkey into the oven")}</td>
+        <td class="x" data-label="Dish">${sel("schedule", d, "dish", dishOpts(d.dish || ""))}</td>
+        <td class="x" data-label="Uses">${sel("schedule", d, "where", opts(WHERE, d.where || ""), /oven|microwave/i.test(d.where || "") ? "where-oven" : "")}</td>
+        <td class="c p dn">${chk("schedule", d, "done", "Done")}</td>
+        ${tog("schedule", d)}
+        <td class="x" data-label="Delete">${del("schedule", d)}</td></tr>`;
+    }
+    b.innerHTML = html;
+  }
+
+  function renderCounts() {
+    $("#dishCount").textContent = state.dishes.length;
+    $("#n-dishes").textContent = state.dishes.length || "";
+    $("#n-ingredients").textContent = state.ingredients.length || "";
+    $("#n-schedule").textContent = state.schedule.length || "";
+  }
+
+  function renderAll() {
+    preserveFocus(() => { renderDishes(); renderIngredients(); renderSchedule(); renderCounts(); });
+    applyWriteGate();
+  }
+
+  function applyWriteGate() {
+    document.querySelectorAll("[data-col], [data-add], [data-del], #serveTime").forEach(el => el.disabled = !state.canWrite);
+  }
+
+  // Edits: save on change (blur for text, immediately for selects and checkboxes)
+  document.addEventListener("change", e => {
+    const el = e.target;
+    if (el.id === "serveTime") { state.serveTime = el.value; save(() => api("PUT", "/api/meta/plan", { serveTime: el.value })); return; }
+    const { col, doc, f } = el.dataset;
+    if (!col || !doc) return;
+    const v = el.type === "checkbox" ? el.checked : el.value.trim();
+    const row = state[col].find(r => r.id === doc);
+    if (!row || row[f] === v) return;
+    row[f] = v;
+    renderAll();
+    save(() => api("PATCH", `/api/${col}/${doc}`, { [f]: v }));
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Enter" && e.target.matches("td input[type=text], td input[type=url], td textarea")) { e.preventDefault(); e.target.blur(); }
+  });
+
+  document.addEventListener("click", e => {
+    const add = e.target.closest("[data-add]");
+    if (add) {
+      const col = add.dataset.add;
+      const base = { order: Date.now() };
+      if (col === "dishes") Object.assign(base, { name: "", course: "", recipe: "", ahead: "", notes: "" });
+      if (col === "ingredients") Object.assign(base, { item: "", dish: "", qty: "", when: "", shop: "", bought: false });
+      if (col === "schedule") Object.assign(base, { day: "Christmas Day", time: "", task: "", dish: "", where: "", done: false });
+      const newId = Array.from(crypto.getRandomValues(new Uint8Array(10)), b => b.toString(16).padStart(2, "0")).join("");
+      state[col].push({ id: newId, ...base });
+      if (col === "ingredients" && state.ingFilter !== "all") $("#ingFilters .chip[data-f=all]").click(); else renderAll();
+      save(() => api("POST", `/api/${col}`, { id: newId, ...base }));
+      setTimeout(() => { const first = { dishes: "name", ingredients: "item", schedule: "task" }[col]; document.getElementById(id(col, newId, first))?.focus(); }, 60);
+      return;
+    }
+    const tgl = e.target.closest("[data-tog]");
+    if (tgl) { const k = tgl.dataset.tog; open.has(k) ? open.delete(k) : open.add(k); renderAll(); return; }
+    const delBtn = e.target.closest("[data-del]");
+    if (delBtn) {
+      const col = delBtn.dataset.del, doc = delBtn.dataset.doc;
+      const key = col + doc;
+      if (armedDelete === key) {
+        armedDelete = null;
+        state[col] = state[col].filter(r => r.id !== doc);
+        renderAll();
+        save(() => api("DELETE", `/api/${col}/${doc}`));
+      } else {
+        armedDelete = key; renderAll();
+        setTimeout(() => { if (armedDelete === key) { armedDelete = null; renderAll(); } }, 3000);
+      }
+    }
+  });
+
+  // --- API layer (replaces claude.use("db")) ---
+  let rev = -1, pending = 0;
+  async function api(method, url, body) {
+    const r = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  }
+
+  async function save(fn) {
+    pending++;
+    try { await fn(); notice(""); }
+    catch (err) { notice("That change didn't save. Check your connection and try again."); await load(); }
+    finally { pending--; }
+  }
+
+  // True if a text box has been typed in but not yet committed
+  function editing() {
+    const a = document.activeElement;
+    if (!a || !a.dataset || !a.dataset.col || a.type === "checkbox" || a.tagName === "SELECT") return false;
+    const row = state[a.dataset.col].find(r => r.id === a.dataset.doc);
+    return !!row && String(row[a.dataset.f] ?? "") !== a.value.trim();
+  }
+
+  async function load() {
+    try {
+      const s = await api("GET", "/api/state");
+      rev = s.rev;
+      ["dishes", "ingredients", "schedule"].forEach(c => state[c] = s[c]);
+      const plan = (s.meta || []).find(m => m.id === "plan");
+      const el = $("#serveTime");
+      if (plan && plan.serveTime && document.activeElement !== el) { el.value = plan.serveTime; state.serveTime = plan.serveTime; }
+      renderAll();
+      if ($("#notice").textContent.startsWith("Can't reach")) notice("");
+    } catch (e) { notice("Can't reach the planner. Retrying…"); }
+  }
+
+  async function poll() {
+    if (document.hidden || pending || editing()) return;
+    try {
+      const r = await api("GET", "/api/rev");
+      if (r.rev !== rev) await load();
+      else if ($("#notice").textContent.startsWith("Can't reach")) notice("");
+    } catch (e) { notice("Can't reach the planner. Retrying…"); }
+  }
+
+  setInterval(poll, 3000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
+  window.addEventListener("online", poll);
+
+  renderAll();
+  load();
+})();
+</script>

@@ -1,0 +1,11 @@
+services:
+  planner:
+    build: .
+    container_name: christmas-planner
+    restart: unless-stopped
+    ports:
+      - "3000:3000"   # host:container. Change the left number to use another port
+    volumes:
+      - ./data:/data
+    environment:
+      TZ: Europe/London
