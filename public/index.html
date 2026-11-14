@@ -103,7 +103,53 @@ td.tg { display: none; }
 td textarea.grow { width: 100%; font: inherit; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 7px; resize: none; overflow: hidden; white-space: pre; height: 2.4em; display: block; }
 td textarea.grow:hover { border-color: var(--line); }
 tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { appearance: none; border: 0; background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); padding: 7px 16px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--pine); color: var(--surface); }
+.play-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.play-day { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.play-day select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; }
+.play-clock { margin-left: auto; text-align: right; display: grid; }
+.play-clock b { font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--pine); }
+.play-clock small { color: var(--muted); font-size: 13px; }
+.transport { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.transport input[type="range"] { flex: 1 1 220px; accent-color: var(--pine); min-height: 28px; }
+.play-h { font-family: var(--font-display); font-weight: 400; font-size: 18px; margin: 6px 0 0; color: var(--ink); }
+.cues { display: grid; gap: 8px; }
+.cue { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--pine); border-radius: 12px; padding: 10px 12px; }
+.cue-time { display: grid; min-width: 4.4em; }
+.cue-time b { font-size: 20px; font-variant-numeric: tabular-nums; color: var(--pine); }
+.cue-time span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.cue-body p { margin: 0; }
+.cue-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.cue-tags .tag { background: var(--pine-soft); color: var(--pine); }
+.cue-tags .tag.oven { background: var(--berry-soft); color: var(--berry); }
+.cue-btn { min-height: 40px; }
+.cue.now { border-left-color: var(--berry); padding: 16px; }
+.cue.now .cue-time b { font-size: 30px; font-family: var(--font-display); font-weight: 400; color: var(--berry); }
+.cue.now .cue-body p { font-size: 20px; line-height: 1.35; }
+.cue.now .cue-btn { min-height: 52px; padding-inline: 24px; font-size: 16px; }
+.cue.late1 { border-left-color: var(--gold); background: var(--gold-soft); }
+.cue.late1 .cue-time b, .cue.late1 .cue-time span { color: var(--gold); }
+.cue.late2 { border-left-color: var(--berry); background: var(--berry-soft); }
+.cue.late2 .cue-time span { color: var(--berry); }
+.cue.next { border-left-color: var(--gold); }
+.cue.later, .cue.any { border-left-color: var(--line); }
+.cue.done { opacity: .65; border-left-color: var(--line); }
+.cue.done .cue-body p { text-decoration: line-through; }
+.cue.idle { border-left-color: var(--line); grid-template-columns: 1fr; text-align: center; padding: 20px; }
+.cue.idle strong { font-family: var(--font-display); font-weight: 400; font-size: 20px; }
+.cue.idle span { color: var(--muted); }
+.play-more { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.play-more summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+.play-more[open] summary { margin-bottom: 10px; }
+.play-foot { margin: 0; font-size: 13px; color: var(--muted); }
 @media (max-width: 640px) {
+  .cue { grid-template-columns: auto 1fr; }
+  .cue .cue-btn { grid-column: 1 / -1; width: 100%; }
+  .cue.now .cue-body p { font-size: 18px; }
+  .play-clock { margin-left: 0; text-align: left; width: 100%; }
+  .seg button { padding: 9px 16px; }
   .sheet { overflow: visible; background: none; border: 0; border-radius: 0; }
   table, tbody { display: block; min-width: 0; width: 100%; }
   thead { display: none; }
@@ -151,6 +197,7 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     <button role="tab" data-tab="dishes" aria-selected="true">Dishes<span class="n" id="n-dishes"></span></button>
     <button role="tab" data-tab="ingredients" aria-selected="false">Ingredients<span class="n" id="n-ingredients"></span></button>
     <button role="tab" data-tab="schedule" aria-selected="false">Schedule<span class="n" id="n-schedule"></span></button>
+    <button role="tab" data-tab="play" aria-selected="false">Play</button>
   </nav>
 
   <section class="panel" id="panel-dishes">
@@ -192,6 +239,38 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
       <tbody id="body-schedule"></tbody>
     </table></div>
   </section>
+
+  <section class="panel" id="panel-play" hidden>
+    <div class="play-bar">
+      <div class="seg" role="group" aria-label="Mode">
+        <button id="modeLive" aria-pressed="true">Live</button>
+        <button id="modeReh" aria-pressed="false">Rehearsal</button>
+      </div>
+      <label class="play-day"><span>Day</span><select id="playDay"></select></label>
+      <button class="chip" id="playAlerts" aria-pressed="false" title="Beep and vibrate when a step becomes due (live mode)">Alerts off</button>
+      <div class="play-clock"><b id="playClock">--:--</b><small id="playServe"></small></div>
+    </div>
+    <div id="playHint" class="notice" hidden></div>
+    <div class="transport" id="playTransport" hidden>
+      <button class="btn" id="playBtn">▶ Play</button>
+      <div class="seg" id="speedSeg" role="group" aria-label="Speed">
+        <button data-speed="1" aria-pressed="false">1×</button>
+        <button data-speed="60" aria-pressed="true" title="One minute passes every second">60×</button>
+        <button data-speed="600" aria-pressed="false" title="Ten minutes pass every second">600×</button>
+      </div>
+      <button class="chip" id="playReset" title="Back to the start of the day and clear rehearsal ticks">⏮ Restart</button>
+      <input type="range" id="playScrub" min="0" max="1439" step="1" aria-label="Time of day">
+    </div>
+    <div class="meter"><span id="playProgText">0 of 0 done</span><span class="bar"><i id="playProgBar" style="width:0%"></i></span></div>
+    <h2 class="play-h">Now</h2>
+    <div id="playNow" class="cues"></div>
+    <h2 class="play-h" id="playNextH">Up next</h2>
+    <div id="playNext" class="cues"></div>
+    <div id="playAnytimeWrap"><h2 class="play-h">Anytime</h2><div id="playAnytime" class="cues"></div></div>
+    <details id="playLaterWrap" class="play-more"><summary id="playLaterSum">Later</summary><div id="playLater" class="cues"></div></details>
+    <details id="playDoneWrap" class="play-more"><summary id="playDoneSum">Done</summary><div id="playDone" class="cues"></div></details>
+    <p class="play-foot" id="playAwake" hidden>This connection can't keep the screen awake (browsers require https for that). Switch off auto-lock on your phone while you cook.</p>
+  </section>
 </div>
 
 <script>
@@ -217,6 +296,229 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     $("#countdown").textContent = d > 0 ? d : d === 0 ? "Today!" : "–";
   })();
 
+  // ===== Play: follow the schedule in real time =====
+  // Live follows the real clock (ticks are saved). Rehearsal runs a simulated clock (ticks are NOT saved).
+  const play = { mode: "live", day: null, sim: 0, playing: false, speed: 60, rehDone: new Set(), alerts: false, seen: null, lastTs: 0 };
+  const cache = {};
+  const setHTML = (key, el, html) => { if (cache[key] !== html) { cache[key] = html; el.innerHTML = html; } };
+  const toMin = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+  const pad = n => String(n).padStart(2, "0");
+  const fmtClock = (min, secs) => pad(Math.floor(min / 60) % 24) + ":" + pad(Math.floor(min % 60)) + (secs ? ":" + pad(Math.floor((min * 60) % 60)) : "");
+  const fmtSpan = min => {
+    const m = Math.max(0, Math.round(min));
+    if (m < 1) return "now";
+    if (m < 60) return m + " min";
+    const h = Math.floor(m / 60), r = m % 60;
+    return h + " h" + (r ? " " + pad(r) + " min" : "");
+  };
+  function todayDay() {
+    const n = new Date(), y = n.getFullYear();
+    const d = new Date(y, n.getMonth(), n.getDate()).getTime();
+    if (d < new Date(y, 11, 23).getTime()) return DAYS[0];
+    if (d === new Date(y, 11, 23).getTime()) return DAYS[1];
+    if (d === new Date(y, 11, 24).getTime()) return DAYS[2];
+    return DAYS[3];
+  }
+  const liveToday = () => play.mode === "live" && play.day === todayDay();
+  const isDone = d => play.mode === "rehearsal" ? play.rehDone.has(d.id) : !!d.done;
+  function playClock() {
+    if (play.mode === "rehearsal") return play.sim;
+    const n = new Date();
+    return n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
+  }
+  function resetSim() {
+    const first = state.schedule.filter(s => s.day === play.day).map(s => toMin(s.time)).filter(m => m !== null);
+    play.sim = first.length ? Math.max(0, Math.min(...first) - 5) : 0;
+    play.playing = false;
+    play.rehDone.clear();
+    play.seen = null;
+  }
+
+  function cue(d, kind, clock, running) {
+    const t = toMin(d.time);
+    const dish = state.dishes.find(x => x.id === d.dish);
+    let big = "Anytime", small = "";
+    if (t !== null) {
+      big = fmtClock(t);
+      if (kind === "now") {
+        const late = clock - t;
+        small = late >= 1 ? fmtSpan(late) + " late" : "due now";
+      } else if (kind === "done") small = "done";
+      else small = running ? "in " + fmtSpan(t - clock) : "";
+    } else if (kind === "done") small = "done";
+    let cls = "cue " + kind;
+    if (kind === "now" && t !== null) { const late = clock - t; if (late > 15) cls += " late2"; else if (late > 5) cls += " late1"; }
+    const tags = (dish && dish.name ? `<span class="tag">${esc(dish.name)}</span>` : "") +
+      (d.where ? `<span class="tag${/oven|microwave/i.test(d.where) ? " oven" : ""}">${esc(d.where)}</span>` : "");
+    const btn = kind === "done"
+      ? `<button class="chip cue-btn" data-pundo="${esc(d.id)}">Undo</button>`
+      : `<button class="btn cue-btn" data-pdone="${esc(d.id)}">Done</button>`;
+    return `<article class="${cls}"><div class="cue-time"><b>${big}</b><span>${esc(small)}</span></div><div class="cue-body"><p>${esc(d.task || "(no description)")}</p><div class="cue-tags">${tags}</div></div>${btn}</article>`;
+  }
+
+  let audioCtx = null;
+  function alertUser() {
+    try {
+      if (audioCtx) {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.frequency.value = 880; g.gain.value = 0.15;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + 0.25);
+      }
+    } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+  }
+
+  function renderPlay() {
+    if (state.tab !== "play") return;
+    const steps = state.schedule.filter(s => s.day === play.day);
+    const timed = steps.filter(s => toMin(s.time) !== null).sort((a, b) => toMin(a.time) - toMin(b.time) || (a.order - b.order));
+    const anytime = steps.filter(s => toMin(s.time) === null).sort((a, b) => a.order - b.order);
+    const running = play.mode === "rehearsal" || liveToday();
+    const clock = running ? playClock() : -1;
+    const pending = timed.filter(s => !isDone(s));
+    const due = running ? pending.filter(s => toMin(s.time) <= clock) : [];
+    const upcoming = pending.filter(s => !due.includes(s));
+    const queue = due.slice(3).concat(upcoming);
+
+    // Controls
+    $("#modeLive").setAttribute("aria-pressed", play.mode === "live");
+    $("#modeReh").setAttribute("aria-pressed", play.mode === "rehearsal");
+    $("#playTransport").hidden = play.mode !== "rehearsal";
+    $("#playBtn").textContent = play.playing ? "⏸ Pause" : "▶ Play";
+    document.querySelectorAll("#speedSeg button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.speed === play.speed));
+    const scrub = $("#playScrub");
+    if (document.activeElement !== scrub) scrub.value = Math.floor(play.sim);
+    $("#playAlerts").textContent = play.alerts ? "Alerts on" : "Alerts off";
+    $("#playAlerts").setAttribute("aria-pressed", play.alerts);
+    $("#playClock").textContent = running ? fmtClock(clock, play.mode === "live") : "--:--";
+    let serve = "";
+    if (running && play.day === "Christmas Day" && state.serveTime) {
+      const st = toMin(state.serveTime);
+      if (st !== null) serve = clock < st ? "Serving in " + fmtSpan(st - clock) : "Dinner time!";
+    }
+    $("#playServe").textContent = serve;
+    const hint = $("#playHint");
+    if (play.mode === "rehearsal") { hint.textContent = "Rehearsal: the clock is simulated and your ticks here are not saved."; hint.hidden = false; }
+    else if (!liveToday()) { hint.textContent = "Live follows the real clock on the day itself, and today isn't " + play.day + ". Showing the plan only. Try Rehearsal to run through it."; hint.hidden = false; }
+    else hint.hidden = true;
+    $("#playAwake").hidden = !(play.mode === "live" && !("wakeLock" in navigator));
+
+    // Progress
+    const total = steps.length, doneN = steps.filter(isDone).length;
+    $("#playProgText").textContent = doneN + " of " + total + " done";
+    $("#playProgBar").style.width = total ? (doneN / total * 100) + "%" : "0%";
+
+    // Now
+    let nowHtml;
+    if (due.length) {
+      nowHtml = due.slice(0, 3).map(d => cue(d, "now", clock, running)).join("") +
+        (due.length > 3 ? `<p class="play-foot">+${due.length - 3} more due, shown below</p>` : "");
+    } else if (!timed.length) {
+      nowHtml = `<div class="cue idle"><strong>No timed steps for ${esc(play.day)}</strong><span>${anytime.length ? "Anytime tasks are listed below." : "Add steps in the Schedule tab."}</span></div>`;
+    } else if (!pending.length) {
+      nowHtml = `<div class="cue idle"><strong>All done 🎉</strong><span>Every timed step for ${esc(play.day)} is ticked off.</span></div>`;
+    } else if (!running) {
+      nowHtml = `<div class="cue idle"><strong>Starts at ${fmtClock(toMin(pending[0].time))}</strong><span>${esc(pending[0].task || "")}</span></div>`;
+    } else {
+      const n = pending[0];
+      nowHtml = `<div class="cue idle"><strong>Nothing due right now</strong><span>Next at ${fmtClock(toMin(n.time))} (in ${fmtSpan(toMin(n.time) - clock)}): ${esc(n.task || "")}</span></div>`;
+    }
+    setHTML("now", $("#playNow"), nowHtml);
+
+    // Up next / Later
+    const nxt = queue.slice(0, 3), later = queue.slice(3);
+    const lateKind = d => running && toMin(d.time) <= clock ? "now" : "next";
+    setHTML("next", $("#playNext"), nxt.map(d => cue(d, lateKind(d), clock, running)).join(""));
+    $("#playNextH").hidden = !nxt.length; $("#playNext").hidden = !nxt.length;
+    setHTML("later", $("#playLater"), later.map(d => cue(d, "later", clock, running)).join(""));
+    $("#playLaterWrap").hidden = !later.length;
+    $("#playLaterSum").textContent = "Later (" + later.length + ")";
+
+    // Anytime
+    const anyPending = anytime.filter(s => !isDone(s));
+    setHTML("any", $("#playAnytime"), anyPending.map(d => cue(d, "any", clock, running)).join(""));
+    $("#playAnytimeWrap").hidden = !anyPending.length;
+
+    // Done
+    const doneSteps = steps.filter(isDone).sort((a, b) => (toMin(a.time) ?? -1) - (toMin(b.time) ?? -1));
+    setHTML("done", $("#playDone"), doneSteps.map(d => cue(d, "done", clock, running)).join(""));
+    $("#playDoneWrap").hidden = !doneSteps.length;
+    $("#playDoneSum").textContent = "Done (" + doneSteps.length + ")";
+
+    // Alert when a step newly becomes due (live only)
+    if (play.mode === "live" && running) {
+      const ids = new Set(due.map(d => d.id));
+      if (play.seen && play.alerts && [...ids].some(i => !play.seen.has(i))) alertUser();
+      play.seen = ids;
+    }
+  }
+
+  function setPlayDone(id, v) {
+    if (play.mode === "rehearsal") { v ? play.rehDone.add(id) : play.rehDone.delete(id); renderPlay(); return; }
+    const row = state.schedule.find(r => r.id === id);
+    if (!row) return;
+    row.done = v;
+    renderAll();
+    save(() => api("PATCH", `/api/schedule/${id}`, { done: v }));
+  }
+
+  function initPlay() {
+    play.day = todayDay();
+    const sel = $("#playDay");
+    sel.innerHTML = DAYS.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
+    sel.value = play.day;
+    sel.addEventListener("change", () => { play.day = sel.value; resetSim(); play.seen = null; renderPlay(); });
+    const setMode = m => { play.mode = m; play.playing = false; play.seen = null; if (m === "rehearsal") resetSim(); renderPlay(); };
+    $("#modeLive").addEventListener("click", () => setMode("live"));
+    $("#modeReh").addEventListener("click", () => setMode("rehearsal"));
+    $("#playBtn").addEventListener("click", () => {
+      if (!play.playing && play.sim >= 1439) resetSim();
+      play.playing = !play.playing; play.lastTs = performance.now(); renderPlay();
+    });
+    $("#playReset").addEventListener("click", () => { resetSim(); renderPlay(); });
+    document.querySelectorAll("#speedSeg button").forEach(b => b.addEventListener("click", () => { play.speed = +b.dataset.speed; renderPlay(); }));
+    // Jumping the clock: treat everything before the new time as already done (and undo anything after it)
+    $("#playScrub").addEventListener("input", e => {
+      play.sim = +e.target.value;
+      play.rehDone = new Set(state.schedule.filter(s => s.day === play.day && toMin(s.time) !== null && toMin(s.time) < play.sim).map(s => s.id));
+      renderPlay();
+    });
+    $("#playAlerts").addEventListener("click", () => {
+      play.alerts = !play.alerts;
+      if (play.alerts && !audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+      if (play.alerts) alertUser();
+      renderPlay();
+    });
+    $("#panel-play").addEventListener("click", e => {
+      const d = e.target.closest("[data-pdone]"), u = e.target.closest("[data-pundo]");
+      if (d) setPlayDone(d.dataset.pdone, true);
+      else if (u) setPlayDone(u.dataset.pundo, false);
+    });
+    setInterval(() => {
+      const now = performance.now();
+      if (play.mode === "rehearsal" && play.playing) {
+        play.sim = Math.min(1439, play.sim + (now - play.lastTs) / 1000 * play.speed / 60);
+        if (play.sim >= 1439) play.playing = false;
+      }
+      play.lastTs = now;
+      if (state.tab === "play" && !document.hidden) renderPlay();
+    }, 500);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) keepAwake(); });
+  }
+
+  let wakeLock = null;
+  async function keepAwake() {
+    try {
+      if (state.tab === "play" && !document.hidden && navigator.wakeLock && !wakeLock) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => { wakeLock = null; });
+      }
+    } catch (e) { wakeLock = null; }
+  }
+
+  initPlay();
+
   function notice(msg) { const n = $("#notice"); n.textContent = msg; n.hidden = !msg; }
 
   // Tabs
@@ -224,7 +526,8 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
   function setTab(t) {
     state.tab = t;
     document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-    ["dishes", "ingredients", "schedule"].forEach(k => $("#panel-" + k).hidden = k !== t);
+    ["dishes", "ingredients", "schedule", "play"].forEach(k => $("#panel-" + k).hidden = k !== t);
+    if (t === "play") { renderPlay(); keepAwake(); }
     try { localStorage.setItem("xmas-tab", t); } catch (e) {}
   }
   try { const t = localStorage.getItem("xmas-tab"); if (t) setTab(t); } catch (e) {}
@@ -334,7 +637,7 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
   }
 
   function renderAll() {
-    preserveFocus(() => { renderDishes(); renderIngredients(); renderSchedule(); renderCounts(); });
+    preserveFocus(() => { renderDishes(); renderIngredients(); renderSchedule(); renderCounts(); renderPlay(); });
     applyWriteGate();
   }
 
