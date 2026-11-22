@@ -124,6 +124,9 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
 .cue-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .cue-tags .tag { background: var(--pine-soft); color: var(--pine); }
 .cue-tags .tag.oven { background: var(--berry-soft); color: var(--berry); }
+.cue-tags a.tag { text-decoration: none; background: var(--gold-soft); color: var(--gold); }
+.cue-tags a.tag:hover, .rlink:hover { text-decoration: underline; }
+.rlink { display: inline-block; margin: 2px 7px 0; font-size: 12px; font-weight: 600; color: var(--pine); text-decoration: none; }
 .cue-btn { min-height: 40px; }
 .cue.now { border-left-color: var(--berry); padding: 16px; }
 .cue.now .cue-time b { font-size: 30px; font-family: var(--font-display); font-weight: 400; color: var(--berry); }
@@ -334,6 +337,12 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     play.seen = null;
   }
 
+  // Recipe URL of the dish a step belongs to (only http/https links)
+  function recipeOf(dishId) {
+    const dish = state.dishes.find(x => x.id === dishId);
+    return dish && /^https?:\/\//i.test(dish.recipe || "") ? { url: dish.recipe, name: dish.name || "Dish" } : null;
+  }
+
   function cue(d, kind, clock, running) {
     const t = toMin(d.time);
     const dish = state.dishes.find(x => x.id === d.dish);
@@ -349,7 +358,8 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     let cls = "cue " + kind;
     if (kind === "now" && t !== null) { const late = clock - t; if (late > 15) cls += " late2"; else if (late > 5) cls += " late1"; }
     const tags = (dish && dish.name ? `<span class="tag">${esc(dish.name)}</span>` : "") +
-      (d.where ? `<span class="tag${/oven|microwave/i.test(d.where) ? " oven" : ""}">${esc(d.where)}</span>` : "");
+      (d.where ? `<span class="tag${/oven|microwave/i.test(d.where) ? " oven" : ""}">${esc(d.where)}</span>` : "") +
+      (recipeOf(d.dish) ? `<a class="tag" href="${esc(recipeOf(d.dish).url)}" target="_blank" rel="noopener">Recipe ↗</a>` : "");
     const btn = kind === "done"
       ? `<button class="chip cue-btn" data-pundo="${esc(d.id)}">Undo</button>`
       : `<button class="btn cue-btn" data-pdone="${esc(d.id)}">Done</button>`;
@@ -619,7 +629,7 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
       html += `<tr class="${rowCls("schedule", d, "sch" + (d.done ? " done" : ""))}">
         <td class="x" data-label="Day">${sel("schedule", d, "day", opts(DAYS, d.day))}</td>
         <td class="p tm"><input type="time" id="${id("schedule", d.id, "time")}" data-col="schedule" data-doc="${d.id}" data-f="time" value="${esc(d.time)}"></td>
-        <td class="p tk">${area("schedule", d, "task", "e.g. Turkey into the oven")}</td>
+        <td class="p tk">${area("schedule", d, "task", "e.g. Turkey into the oven")}${recipeOf(d.dish) ? `<a class="rlink" href="${esc(recipeOf(d.dish).url)}" target="_blank" rel="noopener">${esc(recipeOf(d.dish).name)} recipe ↗</a>` : ""}</td>
         <td class="x" data-label="Dish">${sel("schedule", d, "dish", dishOpts(d.dish || ""))}</td>
         <td class="x" data-label="Uses">${sel("schedule", d, "where", opts(WHERE, d.where || ""), /oven|microwave/i.test(d.where || "") ? "where-oven" : "")}</td>
         <td class="c p dn">${chk("schedule", d, "done", "Done")}</td>
