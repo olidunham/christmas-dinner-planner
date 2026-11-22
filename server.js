@@ -9,7 +9,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const DB_PATH = process.env.DB_PATH || "/data/planner.db";
 const SEED_FILE = process.env.SEED_FILE || path.join(__dirname, "seed", "christmas-dinner-data.json");
 const PUBLIC_DIR = path.join(__dirname, "public");
-const COLS = ["dishes", "ingredients", "schedule", "meta"];
+const COLS = ["dishes", "ingredients", "schedule", "equipment", "meta"];
 const MAX_BODY = 1024 * 1024;
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });

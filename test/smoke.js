@@ -48,6 +48,12 @@ async function run() {
   r = await call("GET", "/api/dishes/t1");
   assert.equal(r.status, 404);
 
+  r = await call("POST", "/api/equipment", { id: "e1", item: "Roasting tin", qty: "2", ready: false, order: 1 });
+  assert.equal(r.status, 201);
+  r = await call("PATCH", "/api/equipment/e1", { ready: true });
+  assert.equal(r.body.ready, true);
+  assert.equal((await call("GET", "/api/state")).body.equipment.length, 1, "equipment in state");
+
   r = await call("GET", "/api/rev");
   assert.ok(r.body.rev > rev0, "rev bumps on writes");
 

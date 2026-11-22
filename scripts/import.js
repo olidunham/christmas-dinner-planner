@@ -6,7 +6,8 @@
 //
 // rows.json: { "dishPatches": [{ "id": "<dish id>", "recipe"?, "ahead"?, "course"?, "notes"? }],
 //              "ingredients": [{ "dish", "item", "qty", "when": "early"|"late"|"", "shop"? }],
-//              "schedule":    [{ "day", "time": "HH:MM"|"", "task", "dish"?, "where"? }] }
+//              "schedule":    [{ "day", "time": "HH:MM"|"", "task", "dish"?, "where"? }],
+//              "equipment":   [{ "item", "qty"?, "dish"?, "notes"? }] }
 // Only ever creates rows (and patches dishes you list). Never deletes. Skips rows that already exist.
 // The lists below must match the ones in public/index.html.
 const fs = require("node:fs");
@@ -73,6 +74,17 @@ const key = (...p) => p.map(x => String(x ?? "").trim().toLowerCase()).join("|")
     schedule.push(row);
   });
 
+  const haveEq = new Set((state.equipment || []).map(e => key(e.item)));
+  const equipment = [];
+  (input.equipment || []).forEach((r, i) => {
+    must(typeof r.item === "string" && r.item.trim(), `equipment[${i}]: item is required`);
+    must(!r.dish || dishIds.has(r.dish), `equipment[${i}] "${r.item}": unknown dish id ${r.dish}`);
+    const row = { item: String(r.item || "").trim(), qty: String(r.qty ?? ""), dish: r.dish ?? "", notes: String(r.notes ?? ""), ready: false };
+    if (haveEq.has(key(row.item))) { warnings.push(`skip (already there): equipment / ${row.item}`); return; }
+    haveEq.add(key(row.item));
+    equipment.push(row);
+  });
+
   if (errors.length) { console.error("Not safe to write. Fix these first:\n - " + errors.join("\n - ")); process.exit(1); }
 
   console.log(`\nTarget: ${base}  (currently ${state.dishes.length} dishes, ${state.ingredients.length} ingredients, ${state.schedule.length} steps)`);
@@ -82,6 +94,10 @@ const key = (...p) => p.map(x => String(x ?? "").trim().toLowerCase()).join("|")
   console.log(`\nSchedule steps to add (${schedule.length}):`);
   schedule.sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day) || a.time.localeCompare(b.time))
     .forEach(r => console.log(`  ${r.day.padEnd(14)} ${(r.time || "--:--")}  ${(r.where || "-").padEnd(15)} ${r.task.slice(0, 90)}`));
+  if (equipment.length) {
+    console.log(`\nEquipment to add (${equipment.length}):`);
+    equipment.forEach(r => console.log(`  ${r.item}${r.qty ? "  x " + r.qty : ""}  |  ${r.dish ? dishName(r.dish) : "general"}${r.notes ? "  |  " + r.notes : ""}`));
+  }
   if (warnings.length) console.log("\nNotes:\n  " + warnings.join("\n  "));
 
   if (!apply) { console.log("\nDRY RUN: nothing written. Re-run with --apply to write."); return; }
@@ -94,7 +110,8 @@ const key = (...p) => p.map(x => String(x ?? "").trim().toLowerCase()).join("|")
   for (const p of patches) { const { id, ...rest } = p; await api("PATCH", `/api/dishes/${id}`, rest); }
   for (const r of ingredients) await api("POST", "/api/ingredients", { ...r, order: n++ });
   for (const r of schedule) await api("POST", "/api/schedule", { ...r, order: n++ });
+  for (const r of equipment) await api("POST", "/api/equipment", { ...r, order: n++ });
 
   const after = await api("GET", "/api/state");
-  console.log(`Done. Now ${after.dishes.length} dishes, ${after.ingredients.length} ingredients, ${after.schedule.length} steps.`);
+  console.log(`Done. Now ${after.dishes.length} dishes, ${after.ingredients.length} ingredients, ${after.schedule.length} steps, ${(after.equipment || []).length} equipment items.`);
 })().catch(e => { console.error("Failed:", e.message); process.exit(1); });

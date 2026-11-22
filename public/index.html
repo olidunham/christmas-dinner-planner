@@ -200,6 +200,7 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     <button role="tab" data-tab="dishes" aria-selected="true">Dishes<span class="n" id="n-dishes"></span></button>
     <button role="tab" data-tab="ingredients" aria-selected="false">Ingredients<span class="n" id="n-ingredients"></span></button>
     <button role="tab" data-tab="schedule" aria-selected="false">Schedule<span class="n" id="n-schedule"></span></button>
+    <button role="tab" data-tab="equipment" aria-selected="false">Equipment<span class="n" id="n-equipment"></span></button>
     <button role="tab" data-tab="play" aria-selected="false">Play</button>
   </nav>
 
@@ -240,6 +241,21 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     <div class="sheet"><table>
       <thead><tr><th style="width:15%">Day</th><th style="width:11%">Time</th><th style="width:34%">Task</th><th style="width:18%">Dish</th><th style="width:14%">Uses</th><th style="width:60px" class="c">Done</th><th style="width:44px"></th></tr></thead>
       <tbody id="body-schedule"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" id="panel-equipment" hidden>
+    <div class="panel-head">
+      <div class="chips" id="eqFilters">
+        <button class="chip" data-f="all" aria-pressed="true">All</button>
+        <button class="chip" data-f="todo" aria-pressed="false">Still to sort</button>
+      </div>
+      <div class="meter"><span id="eqText">0 of 0 ready</span><span class="bar"><i id="eqBar" style="width:0%"></i></span></div>
+      <button class="btn" data-add="equipment">+ Add item</button>
+    </div>
+    <div class="sheet"><table>
+      <thead><tr><th style="width:28%">Item</th><th style="width:10%">How many</th><th style="width:18%">For dish</th><th>Notes</th><th style="width:70px" class="c">Ready</th><th style="width:44px"></th></tr></thead>
+      <tbody id="body-equipment"></tbody>
     </table></div>
   </section>
 
@@ -284,7 +300,7 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
   const DAYS = ["Before 23 Dec", "23 Dec", "Christmas Eve", "Christmas Day"];
   const WHERE = ["", "Main oven", "Top oven", "Combi microwave", "Hob", "Fridge", "Freezer", "Shopping", "Other"];
 
-  const state = { dishes: [], ingredients: [], schedule: [], tab: "dishes", ingFilter: "all", canWrite: true, serveTime: "" };
+  const state = { dishes: [], ingredients: [], schedule: [], equipment: [], tab: "dishes", ingFilter: "all", eqFilter: "all", canWrite: true, serveTime: "" };
   let armedDelete = null;
 
   const $ = (s, el = document) => el.querySelector(s);
@@ -536,7 +552,7 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
   function setTab(t) {
     state.tab = t;
     document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-    ["dishes", "ingredients", "schedule", "play"].forEach(k => $("#panel-" + k).hidden = k !== t);
+    ["dishes", "ingredients", "schedule", "equipment", "play"].forEach(k => $("#panel-" + k).hidden = k !== t);
     if (t === "play") { renderPlay(); keepAwake(); }
     try { localStorage.setItem("xmas-tab", t); } catch (e) {}
   }
@@ -639,15 +655,41 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     b.innerHTML = html;
   }
 
+  function renderEquipment() {
+    const all = state.equipment;
+    const ready = all.filter(i => i.ready).length;
+    $("#eqText").textContent = `${ready} of ${all.length} ready`;
+    $("#eqBar").style.width = all.length ? (ready / all.length * 100) + "%" : "0%";
+    const rows = all.filter(i => state.eqFilter === "all" || !i.ready);
+    const b = $("#body-equipment");
+    if (!all.length) { b.innerHTML = empty("No equipment yet", "List the pans, tins, trays and tools you'll need, then tick them off once they're clean and ready."); return; }
+    if (!rows.length) { b.innerHTML = empty("All sorted", "Every item is ticked as ready."); return; }
+    b.innerHTML = rows.map(d => `<tr class="${rowCls("equipment", d, d.ready ? "done" : "")}">
+      <td class="p">${txt("equipment", d, "item", "e.g. Large roasting tin")}</td>
+      <td class="p s">${txt("equipment", d, "qty", "e.g. 2")}</td>
+      <td class="x" data-label="For dish">${sel("equipment", d, "dish", dishOpts(d.dish || ""))}</td>
+      <td class="x" data-label="Notes">${txt("equipment", d, "notes", "")}</td>
+      <td class="c p">${chk("equipment", d, "ready", "Ready")}</td>
+      ${tog("equipment", d)}
+      <td class="x" data-label="Delete">${del("equipment", d)}</td></tr>`).join("");
+  }
+
+  document.querySelectorAll("#eqFilters .chip").forEach(c => c.addEventListener("click", () => {
+    state.eqFilter = c.dataset.f;
+    document.querySelectorAll("#eqFilters .chip").forEach(x => x.setAttribute("aria-pressed", x === c));
+    renderEquipment();
+  }));
+
   function renderCounts() {
     $("#dishCount").textContent = state.dishes.length;
     $("#n-dishes").textContent = state.dishes.length || "";
     $("#n-ingredients").textContent = state.ingredients.length || "";
     $("#n-schedule").textContent = state.schedule.length || "";
+    $("#n-equipment").textContent = state.equipment.length || "";
   }
 
   function renderAll() {
-    preserveFocus(() => { renderDishes(); renderIngredients(); renderSchedule(); renderCounts(); renderPlay(); });
+    preserveFocus(() => { renderDishes(); renderIngredients(); renderSchedule(); renderEquipment(); renderCounts(); renderPlay(); });
     applyWriteGate();
   }
 
@@ -681,11 +723,12 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
       if (col === "dishes") Object.assign(base, { name: "", course: "", recipe: "", ahead: "", notes: "" });
       if (col === "ingredients") Object.assign(base, { item: "", dish: "", qty: "", when: "", shop: "", bought: false });
       if (col === "schedule") Object.assign(base, { day: "Christmas Day", time: "", task: "", dish: "", where: "", done: false });
+      if (col === "equipment") Object.assign(base, { item: "", qty: "", dish: "", notes: "", ready: false });
       const newId = Array.from(crypto.getRandomValues(new Uint8Array(10)), b => b.toString(16).padStart(2, "0")).join("");
       state[col].push({ id: newId, ...base });
       if (col === "ingredients" && state.ingFilter !== "all") $("#ingFilters .chip[data-f=all]").click(); else renderAll();
       save(() => api("POST", `/api/${col}`, { id: newId, ...base }));
-      setTimeout(() => { const first = { dishes: "name", ingredients: "item", schedule: "task" }[col]; document.getElementById(id(col, newId, first))?.focus(); }, 60);
+      setTimeout(() => { const first = { dishes: "name", ingredients: "item", schedule: "task", equipment: "item" }[col]; document.getElementById(id(col, newId, first))?.focus(); }, 60);
       return;
     }
     const tgl = e.target.closest("[data-tog]");
@@ -733,7 +776,7 @@ tr.done td textarea.grow { text-decoration: line-through; color: var(--muted); }
     try {
       const s = await api("GET", "/api/state");
       rev = s.rev;
-      ["dishes", "ingredients", "schedule"].forEach(c => state[c] = s[c]);
+      ["dishes", "ingredients", "schedule", "equipment"].forEach(c => state[c] = s[c] || []);
       const plan = (s.meta || []).find(m => m.id === "plan");
       const el = $("#serveTime");
       if (plan && plan.serveTime && document.activeElement !== el) { el.value = plan.serveTime; state.serveTime = plan.serveTime; }

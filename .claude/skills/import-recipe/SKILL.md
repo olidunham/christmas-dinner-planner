@@ -23,6 +23,7 @@ Format is documented at the top of `scripts/import.js`. Conventions already used
 - **`shop`**: optional note, e.g. `"Buy when you make the gravy"` for ingredients needed only for a make-ahead step.
 - **Schedule**: `day` is one of `Before 23 Dec`, `23 Dec`, `Christmas Eve`, `Christmas Day`; `time` is 24h `HH:MM` (blank for "anytime" tasks such as make-ahead jobs); `where` is one of Main oven, Top oven, Combi microwave, Hob, Fridge, Freezer, Shopping, Other. Work backwards from `meta/plan.serveTime`. Respect the dish's `ahead` setting (Freeze ahead, Day before, On the day). Keep each task one clear action with its time and temperature (the oven is fan-assisted in existing steps).
 - Check oven clashes against the existing Christmas Day steps (Main oven vs Top oven vs Combi microwave) and flag conflicts to the user instead of silently double-booking.
+- **Equipment**: if the recipe needs pans, tins or tools not already in the `equipment` list, add them as `equipment` rows (`item`, `qty`, `dish`, `notes`). Existing items with the same name are skipped.
 - Use `dishPatches` only to set a dish's `recipe`, `ahead`, `course` or `notes` when the user asked or the field is blank.
 
 ## 4. Dry run and show the user
